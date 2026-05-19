@@ -2,6 +2,7 @@ import { Calendar, FileText, Layers } from 'lucide-react'
 import { getTitleFromContent } from '../../shared/types'
 import type { Feature, Priority } from '../../shared/types'
 import { epicThemeFromName } from '../../shared/epicColor'
+import { assigneeThemeFromName } from '../../shared/assigneeColor'
 import { useStore } from '../store'
 import { t } from '../lib/i18n'
 
@@ -30,11 +31,11 @@ function getPriorityLabels(): Record<Priority, string> {
 function getDescriptionFromContent(content: string): string {
   // Remove the first # heading line, then grab the first non-empty text
   const lines = content.split('\n')
-  const headingIndex = lines.findIndex(l => /^#\s+/.test(l))
+  const headingIndex = lines.findIndex((l) => /^#\s+/.test(l))
   const afterHeading = headingIndex >= 0 ? lines.slice(headingIndex + 1) : lines
   const desc = afterHeading
-    .map(l => l.replace(/^#{1,6}\s+/, '').trim())
-    .filter(l => l.length > 0)
+    .map((l) => l.replace(/^#{1,6}\s+/, '').trim())
+    .filter((l) => l.length > 0)
     .join(' ')
   return desc
 }
@@ -55,8 +56,10 @@ export function FeatureCard({ feature, onClick, isDragging }: FeatureCardProps) 
 
     if (days < 0) return { text: t('card.overdue'), className: 'text-red-500' }
     if (days === 0) return { text: t('card.today'), className: 'text-orange-500' }
-    if (days === 1) return { text: t('card.tomorrow'), className: 'text-yellow-600 dark:text-yellow-400' }
-    if (days <= 7) return { text: t('card.daysShort', { days }), className: 'text-zinc-500 dark:text-zinc-400' }
+    if (days === 1)
+      return { text: t('card.tomorrow'), className: 'text-yellow-600 dark:text-yellow-400' }
+    if (days <= 7)
+      return { text: t('card.daysShort', { days }), className: 'text-zinc-500 dark:text-zinc-400' }
 
     return {
       text: date.toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
@@ -68,6 +71,8 @@ export function FeatureCard({ feature, onClick, isDragging }: FeatureCardProps) 
 
   const epicTrimmed = feature.epic?.trim()
   const epicTheme = epicTrimmed ? epicThemeFromName(epicTrimmed, isDarkMode) : null
+  const assigneeTrimmed = feature.assignee?.trim()
+  const assigneeTheme = assigneeTrimmed ? assigneeThemeFromName(assigneeTrimmed, isDarkMode) : null
   return (
     <div
       onClick={onClick}
@@ -94,7 +99,9 @@ export function FeatureCard({ feature, onClick, isDragging }: FeatureCardProps) 
           </div>
         )}
 
-        <div className={`flex items-start gap-2 ${description ? 'mb-1' : cardSettings.compactMode ? 'mb-1' : 'mb-2'}`}>
+        <div
+          className={`flex items-start gap-2 ${description ? 'mb-1' : cardSettings.compactMode ? 'mb-1' : 'mb-2'}`}
+        >
           <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 flex-1">
             {title}
           </h3>
@@ -145,14 +152,31 @@ export function FeatureCard({ feature, onClick, isDragging }: FeatureCardProps) 
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 text-xs mt-auto">
         <div className="flex items-center gap-1 flex-1 min-w-0">
-          {cardSettings.showAssignee && feature.assignee && feature.assignee !== 'null' && (
-            <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 min-w-0">
-              <span className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold bg-zinc-200 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-300">
-                {feature.assignee.split(/\s+/).map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
-              </span>
-              <span className="truncate">{feature.assignee}</span>
-            </div>
-          )}
+          {cardSettings.showAssignee &&
+            assigneeTrimmed &&
+            assigneeTrimmed !== 'null' &&
+            assigneeTheme && (
+              <div
+                className="flex items-center gap-1.5 min-w-0"
+                style={{ color: assigneeTheme.nameForeground }}
+              >
+                <span
+                  className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                  style={{
+                    background: assigneeTheme.badgeBackground,
+                    color: assigneeTheme.badgeForeground
+                  }}
+                >
+                  {assigneeTrimmed
+                    .split(/\s+/)
+                    .map((w: string) => w[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </span>
+                <span className="truncate">{assigneeTrimmed}</span>
+              </div>
+            )}
         </div>
         {cardSettings.showDueDate && dueInfo && (
           <div className={`flex items-center gap-1 ${dueInfo.className}`}>
